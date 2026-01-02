@@ -3,7 +3,7 @@ import json
 import requests
 import asyncio
 import edge_tts
-from moviepy import VideoFileClip, AudioFileClip
+from moviepy import VideoFileClip, AudioFileClip, concatenate_videoclips
 
 def download_pexels_video():
     api_key = os.getenv('PEXELS_API_KEY')
@@ -56,18 +56,25 @@ def create_video():
     duration = audio.duration
     print(f"Duration: {duration:.1f}s")
     
+    # Loop video if needed (MoviePy 2.0 way)
     if background.duration < duration:
         loops = int(duration / background.duration) + 1
-        background = background.loop(n=loops)
+        clips = [background] * loops
+        background = concatenate_videoclips(clips)
     
-    background = background.with_duration(duration)
+    # Trim to audio duration
+    background = background.subclipped(0, duration)
+    
+    # Resize to 1080x1920
     background = background.resized(height=1920)
     
+    # Crop to 1080 width
     w = background.w
     x1 = int(w/2 - 540)
     x2 = int(w/2 + 540)
     background = background.cropped(x1=x1, x2=x2, y1=0, y2=1920)
     
+    # Add audio
     final = background.with_audio(audio)
     
     print("Exporting video")
