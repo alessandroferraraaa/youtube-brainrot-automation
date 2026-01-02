@@ -3,13 +3,7 @@ import json
 import requests
 import asyncio
 import edge_tts
-
-try:
-    from moviepy.editor import VideoFileClip, AudioFileClip
-except ImportError:
-    from moviepy import editor
-    VideoFileClip = editor.VideoFileClip
-    AudioFileClip = editor.AudioFileClip
+from moviepy import VideoFileClip, AudioFileClip
 
 def download_pexels_video():
     api_key = os.getenv('PEXELS_API_KEY')
@@ -60,20 +54,21 @@ def create_video():
     audio = AudioFileClip(voiceover_file)
     
     duration = audio.duration
+    print(f"Duration: {duration:.1f}s")
     
     if background.duration < duration:
         loops = int(duration / background.duration) + 1
         background = background.loop(n=loops)
     
-    background = background.subclip(0, duration)
-    background = background.resize(height=1920)
+    background = background.with_duration(duration)
+    background = background.resized(height=1920)
     
     w = background.w
     x1 = int(w/2 - 540)
     x2 = int(w/2 + 540)
-    background = background.crop(x1=x1, x2=x2, y1=0, y2=1920)
+    background = background.cropped(x1=x1, x2=x2, y1=0, y2=1920)
     
-    final = background.set_audio(audio)
+    final = background.with_audio(audio)
     
     print("Exporting video")
     final.write_videofile(
