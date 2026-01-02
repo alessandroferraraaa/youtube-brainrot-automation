@@ -1,7 +1,6 @@
-openai
-elevenlabs
-moviepy
 requests
+edge-tts
+moviepy
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
