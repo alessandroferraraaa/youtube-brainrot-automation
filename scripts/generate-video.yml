@@ -1,0 +1,46 @@
+name: Generate Brainrot Short
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  create-brainrot-short:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install FFmpeg
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+    
+    - name: Install Python dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Generate brainrot script
+      env:
+        PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+      run: python scripts/generate_brainrot_short.py
+    
+    - name: Create brainrot video
+      env:
+        PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      run: python scripts/create_brainrot_video.py
+    
+    - name: Upload to YouTube
+      env:
+        YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+        YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+        YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      run: python scripts/upload_youtube.py
