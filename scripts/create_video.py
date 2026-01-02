@@ -3,7 +3,13 @@ import json
 import requests
 import asyncio
 import edge_tts
-from moviepy.editor import VideoFileClip, AudioFileClip
+
+try:
+    from moviepy.editor import VideoFileClip, AudioFileClip
+except ImportError:
+    from moviepy import editor
+    VideoFileClip = editor.VideoFileClip
+    AudioFileClip = editor.AudioFileClip
 
 def download_pexels_video():
     api_key = os.getenv('PEXELS_API_KEY')
@@ -27,21 +33,21 @@ def download_pexels_video():
     with open('background.mp4', 'wb') as f:
         f.write(video_data)
     
-    print("Video downloaded!")
+    print("Video downloaded")
     return 'background.mp4'
 
 async def generate_voiceover_async(text):
     print("Generating voiceover...")
     communicate = edge_tts.Communicate(text, "en-US-GuyNeural", rate="+5%")
     await communicate.save("voiceover.mp3")
-    print("Voiceover generated!")
+    print("Voiceover done")
     return 'voiceover.mp3'
 
 def generate_voiceover(text):
     return asyncio.run(generate_voiceover_async(text))
 
 def create_video():
-    print("Starting video creation...")
+    print("Starting video creation")
     
     with open('script.json', 'r') as f:
         script_data = json.load(f)
@@ -49,14 +55,15 @@ def create_video():
     voiceover_file = generate_voiceover(script_data['story'])
     background_file = download_pexels_video()
     
-    print("Loading clips...")
+    print("Loading clips")
     background = VideoFileClip(background_file)
     audio = AudioFileClip(voiceover_file)
     
     duration = audio.duration
     
     if background.duration < duration:
-        background = background.loop(n=int(duration/background.duration)+1)
+        loops = int(duration / background.duration) + 1
+        background = background.loop(n=loops)
     
     background = background.subclip(0, duration)
     background = background.resize(height=1920)
@@ -68,10 +75,17 @@ def create_video():
     
     final = background.set_audio(audio)
     
-    print("Exporting...")
-    final.write_videofile('final_video.mp4', codec='libx264', audio_codec='aac', fps=30, preset='medium', threads=4)
+    print("Exporting video")
+    final.write_videofile(
+        'final_video.mp4',
+        codec='libx264',
+        audio_codec='aac',
+        fps=30,
+        preset='medium',
+        threads=4
+    )
     
-    print("Done!")
+    print("Video created successfully")
     background.close()
     audio.close()
     
