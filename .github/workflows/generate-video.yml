@@ -1,12 +1,12 @@
-name: Generate Daily Brainrot Video
+name: Generate Brainrot Short
 
 on:
   schedule:
-    - cron: '0 13 * * *'
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:
-  create-and-upload:
+  create-brainrot-short:
     runs-on: ubuntu-latest
     
     steps:
@@ -28,15 +28,15 @@ jobs:
         pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Generate video script
+    - name: Generate brainrot script
       env:
         PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-      run: python scripts/generate_script.py
+      run: python scripts/generate_brainrot_short.py
     
-    - name: Create video with voiceover
+    - name: Create brainrot video
       env:
         PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-      run: python scripts/create_video.py
+      run: python scripts/create_brainrot_video.py
     
     - name: Upload to YouTube
       env:
