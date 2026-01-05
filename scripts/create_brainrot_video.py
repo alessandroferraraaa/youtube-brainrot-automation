@@ -97,34 +97,44 @@ def create_scene_clip(scene, scene_num):
     elif w < 1080:
         video = video.resized(width=1080)
     
-    # Add text overlay with Ubuntu-compatible font
-    try:
-        txt = TextClip(
-            text=f"{character}:\n{dialogue[:80]}",
-            font='DejaVu-Sans-Bold',  # Ubuntu default font
-            font_size=50,
-            color='white',
-            stroke_color='black',
-            stroke_width=2,
-            size=(1000, None),
-            method='caption'
-        )
-    except Exception as e:
-        print(f"    Warning: Could not create text overlay: {e}")
-        # Fallback: try without stroke
-        txt = TextClip(
-            text=f"{character}:\n{dialogue[:80]}",
-            font='DejaVu-Sans-Bold',
-            font_size=50,
-            color='white',
-            size=(1000, None),
-            method='caption'
-        )
+    # Add text overlay - try multiple font options
+    font_options = [
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        'DejaVu-Sans-Bold',
+        'DejaVu-Sans',
+        'Liberation-Sans-Bold',
+        'FreeSans'
+    ]
     
-    txt = txt.with_position(('center', 1600)).with_duration(duration)
+    txt = None
+    for font in font_options:
+        try:
+            txt = TextClip(
+                text=f"{character}:\n{dialogue[:80]}",
+                font=font,
+                font_size=50,
+                color='white',
+                stroke_color='black',
+                stroke_width=2,
+                size=(1000, None),
+                method='caption'
+            )
+            print(f"    ✅ Using font: {font}")
+            break
+        except Exception as e:
+            print(f"    ❌ Font {font} failed: {str(e)[:50]}")
+            continue
     
-    final = CompositeVideoClip([video, txt])
-    final = final.with_audio(audio)
+    if txt is None:
+        # Ultimate fallback: transparent clip (video only, no text)
+        print(f"    ⚠️ All fonts failed, proceeding without text overlay")
+        final = video.with_audio(audio)
+    else:
+        txt = txt.with_position(('center', 1600)).with_duration(duration)
+        final = CompositeVideoClip([video, txt])
+        final = final.with_audio(audio)
     
     return final
 
@@ -150,15 +160,16 @@ def create_brainrot_video():
         try:
             clip = create_scene_clip(scene, i)
             clips.append(clip)
+            print(f"    ✅ Scene {i} completed")
         except Exception as e:
-            print(f"❌ Error creating scene {i}: {e}")
-            print(f"   Skipping scene...")
+            print(f"    ❌ Error creating scene {i}: {e}")
+            print(f"    Skipping scene...")
             continue
     
     if not clips:
         raise Exception("No clips were created successfully")
     
-    print("\n🎞️ Combining all scenes...")
+    print(f"\n🎞️ Combining {len(clips)} scenes...")
     final = concatenate_videoclips(clips, method="compose")
     
     print("💾 Exporting video...")
@@ -174,6 +185,7 @@ def create_brainrot_video():
     print("✅ Video created successfully!")
     print(f"📹 Output: brainrot_short.mp4")
     print(f"⏱️ Duration: {final.duration:.1f}s")
+    print(f"🎬 Scenes: {len(clips)}")
     
     for clip in clips:
         clip.close()
